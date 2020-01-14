@@ -13,12 +13,10 @@ import java.util.List;
 @Service
 public class OwnerService implements IOwnerService {
     private IOwnerRepository ownerRepository;
-    private IOwnerSecurityService ownerSecurityService;
+
     @Autowired
-    public OwnerService(IOwnerRepository ownerRepository,
-                        IOwnerSecurityService ownerSecurityService) {
+    public OwnerService(IOwnerRepository ownerRepository) {
         this.ownerRepository = ownerRepository;
-        this.ownerSecurityService = ownerSecurityService;
     }
 
     @Override
@@ -31,22 +29,6 @@ public class OwnerService implements IOwnerService {
         Owner owner = ownerRepository.findById(ownerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found by Id: " + ownerId));
         return owner;
-    }
-    @Override
-    public Owner getOwnerByUsername(String username) throws ResourceNotFoundException {
-        Owner owner = ownerRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Owner not found by username: " + username));
-        return owner;
-    }
-
-    @Override
-    public Owner getOwnerIfValid(Long id, String token)
-            throws ResourceNotFoundException, Exception {
-        Owner owner = ownerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Owner not found by Id: " + id));
-        if(ownerSecurityService.checkIfValidToken(owner, token) == false)
-            throw new Exception("Token not valid");
-        return  owner;
     }
 
     @Override

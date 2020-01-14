@@ -13,6 +13,7 @@ import com.example.demo.service.book.externallibrary.ILibraryService;
 import com.example.demo.service.book.model.BookFromLibrary;
 import com.example.demo.service.owner.IOwnerService;
 import com.example.demo.mapper.CreateReviewMapper;
+import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,22 +31,24 @@ public class OwnerReviewController {
     private IReviewService reviewService;
     private ILibraryService libraryService;
     private IBookService bookService;
-
+    private IOwnerSecurityService ownerSecurityService;
     @Autowired
     public OwnerReviewController(IOwnerService ownerService, IReviewService reviewService,
-                                 ILibraryService libraryService, IBookService bookService) {
+                                 ILibraryService libraryService, IBookService bookService,
+                                 IOwnerSecurityService ownerSecurityService) {
         this.ownerService = ownerService;
         this.reviewService = reviewService;
         this.libraryService = libraryService;
         this.bookService = bookService;
+        this.ownerSecurityService = ownerSecurityService;
     }
 
     @GetMapping("/owners/{id}/reviews")
     public List<CreatedReviewDto> getReviewsFromOwner(@RequestParam String token,
                                             @PathVariable(value="id") Long ownerId)
             throws ResourceNotFoundException, Exception {
-
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         List<Review> reviews = owner.getReviews();
 
         List<CreatedReviewDto> reviewDtos = new ArrayList<>();
@@ -61,8 +64,8 @@ public class OwnerReviewController {
                                                     @PathVariable(value="id") Long ownerId,
                                                     @Valid @RequestBody ReviewDto reviewInput)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
-
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         BookFromLibrary bookFromLibrary = libraryService.getBookByIsbn13(reviewInput.getBookIsbn13());
         Book book = bookService.saveBook(bookFromLibrary);
 
@@ -81,7 +84,8 @@ public class OwnerReviewController {
                                                       @PathVariable(value="ownerId") Long ownerId,
                                                       @PathVariable(value="reviewId") Long reviewId)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         reviewService.checkValidOwnerOfReview(owner,reviewId);
         Review review = reviewService.getReviewById(reviewId);
         reviewService.deleteReview(review);

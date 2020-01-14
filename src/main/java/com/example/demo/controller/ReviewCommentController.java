@@ -10,6 +10,7 @@ import com.example.demo.service.ICommentService;
 import com.example.demo.service.IReviewService;
 import com.example.demo.service.owner.IOwnerService;
 import com.example.demo.mapper.CreateCommentMapper;
+import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +27,14 @@ public class ReviewCommentController {
     private IOwnerService ownerService;
     private ICommentService commentService;
     private IReviewService reviewService;
+    private IOwnerSecurityService ownerSecurityService;
     @Autowired
     public ReviewCommentController(IOwnerService ownerService, ICommentService commentService,
-                                   IReviewService reviewService) {
+                                   IReviewService reviewService, IOwnerSecurityService ownerSecurityService) {
         this.commentService = commentService;
         this.ownerService = ownerService;
         this.reviewService = reviewService;
+        this.ownerSecurityService = ownerSecurityService;
     }
 
     @GetMapping("/reviews/{id}/comments")
@@ -52,7 +55,8 @@ public class ReviewCommentController {
                                                     @PathVariable(value="id") Long reviewId,
                                                     @Valid @RequestBody CommentDto commentInput)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         Review review = reviewService.getReviewById(reviewId);
 
         Comment comment = CreateCommentMapper.commentDtoToCommentModel(commentInput, owner, review);
@@ -71,7 +75,8 @@ public class ReviewCommentController {
                                                       @PathVariable(value="reviewId") Long reviewId,
                                                       @PathVariable(value="commentId") Long commentId)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         Review review = reviewService.getReviewById(reviewId);
 
         commentService.checkValidOwnerForComment(owner,commentId);

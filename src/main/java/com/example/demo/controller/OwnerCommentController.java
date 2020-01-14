@@ -8,6 +8,7 @@ import com.example.demo.persistence.entity.Owner;
 import com.example.demo.persistence.entity.Review;
 import com.example.demo.service.ICommentService;
 import com.example.demo.service.owner.IOwnerService;
+import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,10 +22,12 @@ import java.util.Map;
 public class OwnerCommentController {
     private IOwnerService ownerService;
     private ICommentService commentService;
+    private IOwnerSecurityService ownerSecurityService;
     @Autowired
-    public OwnerCommentController(IOwnerService ownerService, ICommentService commentService) {
+    public OwnerCommentController(IOwnerService ownerService, ICommentService commentService, IOwnerSecurityService ownerSecurityService) {
         this.ownerService = ownerService;
         this.commentService = commentService;
+        this.ownerSecurityService = ownerSecurityService;
     }
 
     @GetMapping("/owners/{id}/comments")
@@ -43,7 +46,8 @@ public class OwnerCommentController {
                                                       @PathVariable(value="ownerId") Long ownerId,
                                                       @PathVariable(value="commentId") Long commentId)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         commentService.checkValidOwnerForComment(owner,commentId);
 
         Comment comment = commentService.getCommentById(commentId);

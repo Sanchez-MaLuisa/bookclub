@@ -6,6 +6,7 @@ import com.example.demo.controller.model.OwnerDto;
 import com.example.demo.persistence.entity.Owner;
 import com.example.demo.service.owner.IOwnerService;
 import com.example.demo.mapper.CreateOwnerMapper;
+import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +21,12 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 public class OwnerController {
     private IOwnerService ownerService;
+    private IOwnerSecurityService ownerSecurityService;
 
     @Autowired
-    public OwnerController(IOwnerService ownerService) {
+    public OwnerController(IOwnerService ownerService, IOwnerSecurityService ownerSecurityService) {
         this.ownerService = ownerService;
+        this.ownerSecurityService = ownerSecurityService;
     }
 
     @GetMapping("/owners")
@@ -55,9 +58,13 @@ public class OwnerController {
                                              @PathVariable(value="id") Long ownerId,
                                              @Valid @RequestBody OwnerDto ownerInput)
             throws ResourceNotFoundException, Exception {
-        ownerService.getOwnerIfValid(ownerId, token);
-        Owner owner = ownerService.modifyOwner( ownerId, ownerInput.getUsername(),
-                                                ownerInput.getPassword(), ownerInput.getEmail());
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
+
+        owner.setUsername(ownerInput.getUsername());
+        owner.setPassword(ownerInput.getPassword());
+        owner.setEmail(ownerInput.getEmail());
+
         Owner savedOwner = ownerService.saveOwner(owner);
         return ResponseEntity.ok(CreateOwnerMapper.ownerModelToCreatedOwnerDto(savedOwner));
     }
@@ -67,7 +74,8 @@ public class OwnerController {
                                             @PathVariable(value="id") Long ownerId,
                                             @Valid @RequestBody OwnerDto ownerInput)
             throws ResourceNotFoundException, Exception {
-        Owner owner = ownerService.getOwnerIfValid(ownerId, token);
+        Owner owner = ownerService.getOwnerById(ownerId);
+        ownerSecurityService.checkIfValidToken(owner, token);
         ownerService.deleteOwner(owner);
 
         Map<String, Boolean> response = new HashMap<>();
