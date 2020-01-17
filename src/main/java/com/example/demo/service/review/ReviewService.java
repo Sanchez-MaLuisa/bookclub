@@ -1,7 +1,6 @@
-package com.example.demo.service;
+package com.example.demo.service.review;
 
 import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.persistence.entity.Author;
 import com.example.demo.persistence.entity.Owner;
 import com.example.demo.persistence.entity.Review;
 import com.example.demo.persistence.repository.IReviewRepository;
@@ -53,6 +52,12 @@ public class ReviewService implements IReviewService {
     @Override
     public List<Review> getPopularByAuthorId(Long authorId) {
         List<Review> reviews = reviewRepository.findPopularByAuthorId(authorId);
+        return reviews;
+    }
+
+    @Override
+    public List<Review> getReviewByAuthorId(Long authorId) {
+        List<Review> reviews = reviewRepository.findManyByAuthorId(authorId);
         return reviews;
     }
 }

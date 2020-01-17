@@ -49,7 +49,7 @@ public class BookService implements IBookService {
     }
 
     @Override
-    public Book saveBook(BookFromLibrary bookFromLibrary) {
+    public Book saveBookFromLibrary(BookFromLibrary bookFromLibrary) {
         Book book = new Book();
         Author author = new Author();
         Optional<Book> bookInDb = bookRepository.findByIsbn13(bookFromLibrary.getIsbn_13());

@@ -21,7 +21,7 @@ public class Book {
     private String isbn13;
 
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "author_id", nullable = false)
     private Author author;
 
     public Book() {}

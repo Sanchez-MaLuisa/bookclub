@@ -3,26 +3,23 @@ package com.example.demo.controller;
 import com.example.demo.controller.model.CreatedReviewDto;
 import com.example.demo.controller.model.ReviewDto;
 import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.persistence.entity.Author;
+import com.example.demo.mapper.IReviewMapper;
 import com.example.demo.persistence.entity.Book;
 import com.example.demo.persistence.entity.Owner;
 import com.example.demo.persistence.entity.Review;
-import com.example.demo.service.IReviewService;
+import com.example.demo.service.review.IReviewService;
 import com.example.demo.service.book.IBookService;
 import com.example.demo.service.book.externallibrary.ILibraryService;
 import com.example.demo.service.book.model.BookFromLibrary;
 import com.example.demo.service.owner.IOwnerService;
-import com.example.demo.mapper.CreateReviewMapper;
+import com.example.demo.mapper.ReviewMapper;
 import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -32,66 +29,58 @@ public class OwnerReviewController {
     private ILibraryService libraryService;
     private IBookService bookService;
     private IOwnerSecurityService ownerSecurityService;
+    private IReviewMapper reviewMapper;
     @Autowired
     public OwnerReviewController(IOwnerService ownerService, IReviewService reviewService,
                                  ILibraryService libraryService, IBookService bookService,
-                                 IOwnerSecurityService ownerSecurityService) {
+                                 IOwnerSecurityService ownerSecurityService, IReviewMapper reviewMapper) {
         this.ownerService = ownerService;
         this.reviewService = reviewService;
         this.libraryService = libraryService;
         this.bookService = bookService;
         this.ownerSecurityService = ownerSecurityService;
+        this.reviewMapper = reviewMapper;
     }
 
     @GetMapping("/owners/{id}/reviews")
-    public List<CreatedReviewDto> getReviewsFromOwner(@RequestParam String token,
-                                            @PathVariable(value="id") Long ownerId)
+    public List<CreatedReviewDto> getReviewsFromOwner(@RequestHeader(value = "Authorization") String token,
+                                                      @PathVariable(value="id") Long ownerId)
             throws ResourceNotFoundException, Exception {
         Owner owner = ownerService.getOwnerById(ownerId);
         ownerSecurityService.checkIfValidToken(owner, token);
         List<Review> reviews = owner.getReviews();
-
-        List<CreatedReviewDto> reviewDtos = new ArrayList<>();
-        for(int i = 0; i < reviews.size(); i++) {
-            reviewDtos.add(CreateReviewMapper.reviewModelToCreatedReviewDto(reviews.get(i)));
-        }
-
-        return reviewDtos;
+        return reviewMapper.reviewModelListToCreatedReviewDtoList(reviews);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/owners/{id}/reviews")
-    public Map<String, Boolean> createReviewInOwner(@RequestParam String token,
-                                                    @PathVariable(value="id") Long ownerId,
-                                                    @Valid @RequestBody ReviewDto reviewInput)
+    public CreatedReviewDto createReviewInOwner(@RequestHeader(value = "Authorization") String token,
+                                                @PathVariable(value="id") Long ownerId,
+                                                @Valid @RequestBody ReviewDto reviewInput)
             throws ResourceNotFoundException, Exception {
         Owner owner = ownerService.getOwnerById(ownerId);
         ownerSecurityService.checkIfValidToken(owner, token);
+
         BookFromLibrary bookFromLibrary = libraryService.getBookByIsbn13(reviewInput.getBookIsbn13());
-        Book book = bookService.saveBook(bookFromLibrary);
+        Book book = bookService.saveBookFromLibrary(bookFromLibrary);
 
-        Review review = CreateReviewMapper.reviewDtoToReviewModel(owner, book, reviewInput);
+        Review review = reviewMapper.reviewDtoToReviewModel(owner, book, reviewInput);
+        Review savedReview = reviewService.saveReview(review);
 
-        owner.getReviews().add(review);
-        ownerService.saveOwner(owner);
-
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("review created", Boolean.TRUE);;
-        return response;
+        return reviewMapper.reviewModelToCreatedReviewDto(savedReview);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/owners/{ownerId}/reviews/{reviewId}")
-    public Map<String, Boolean> deleteReviewFromOwner(@RequestParam String token,
-                                                      @PathVariable(value="ownerId") Long ownerId,
-                                                      @PathVariable(value="reviewId") Long reviewId)
+    public CreatedReviewDto deleteReviewFromOwner(@RequestHeader(value = "Authorization") String token,
+                                                  @PathVariable(value="ownerId") Long ownerId,
+                                                  @PathVariable(value="reviewId") Long reviewId)
             throws ResourceNotFoundException, Exception {
         Owner owner = ownerService.getOwnerById(ownerId);
         ownerSecurityService.checkIfValidToken(owner, token);
         reviewService.checkValidOwnerOfReview(owner,reviewId);
         Review review = reviewService.getReviewById(reviewId);
         reviewService.deleteReview(review);
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("deleted", Boolean.TRUE);;
-        return response;
+        return reviewMapper.reviewModelToCreatedReviewDto(review);
     }
 }
-

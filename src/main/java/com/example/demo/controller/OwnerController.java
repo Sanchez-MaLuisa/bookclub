@@ -3,39 +3,35 @@ package com.example.demo.controller;
 import com.example.demo.controller.model.CreatedOwnerDto;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.controller.model.OwnerDto;
+import com.example.demo.mapper.IOwnerMapper;
 import com.example.demo.persistence.entity.Owner;
 import com.example.demo.service.owner.IOwnerService;
-import com.example.demo.mapper.CreateOwnerMapper;
+import com.example.demo.mapper.OwnerMapper;
 import com.example.demo.service.owner.security.IOwnerSecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
 public class OwnerController {
     private IOwnerService ownerService;
     private IOwnerSecurityService ownerSecurityService;
-
+    private IOwnerMapper ownerMapper;
     @Autowired
-    public OwnerController(IOwnerService ownerService, IOwnerSecurityService ownerSecurityService) {
+    public OwnerController(IOwnerService ownerService, IOwnerSecurityService ownerSecurityService, IOwnerMapper ownerMapper) {
         this.ownerService = ownerService;
         this.ownerSecurityService = ownerSecurityService;
+        this.ownerMapper = ownerMapper;
     }
 
     @GetMapping("/owners")
     public List<CreatedOwnerDto> listAllOwners() {
         List<Owner> owners = ownerService.getAllOwners();
-        List<CreatedOwnerDto> ownerDtos = new ArrayList<>();
-        for(int i = 0; i < owners.size(); i++) {
-            ownerDtos.add(CreateOwnerMapper.ownerModelToCreatedOwnerDto(owners.get(i)));
-        }
+        List<CreatedOwnerDto> ownerDtos = ownerMapper.ownerModelListToCreatedOwnerDtoList(owners);
         return ownerDtos;
     }
 
@@ -43,43 +39,41 @@ public class OwnerController {
     public CreatedOwnerDto getOwnerById(@PathVariable(value="id") Long ownerId)
             throws ResourceNotFoundException {
         Owner owner = ownerService.getOwnerById(ownerId);
-        return CreateOwnerMapper.ownerModelToCreatedOwnerDto(owner);
+        return ownerMapper.ownerModelToCreatedOwnerDto(owner);
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/owners")
     public CreatedOwnerDto createOwner(@Valid @RequestBody OwnerDto ownerInput) {
-        Owner owner = CreateOwnerMapper.ownerDtoToOwnerModel(ownerInput);
+        Owner owner = ownerMapper.ownerDtoToOwnerModel(ownerInput);
         Owner savedOwner = ownerService.saveOwner(owner);
-        return CreateOwnerMapper.ownerModelToCreatedOwnerDto(savedOwner);
+        return ownerMapper.ownerModelToCreatedOwnerDto(savedOwner);
     }
 
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @PutMapping("/owners/{id}")
-    public ResponseEntity<CreatedOwnerDto> updateOwner(@RequestParam String token,
-                                             @PathVariable(value="id") Long ownerId,
-                                             @Valid @RequestBody OwnerDto ownerInput)
+    public CreatedOwnerDto updateOwner(@RequestHeader(value = "Authorization") String token,
+                                       @PathVariable(value="id") Long ownerId,
+                                       @Valid @RequestBody OwnerDto ownerInput)
             throws ResourceNotFoundException, Exception {
         Owner owner = ownerService.getOwnerById(ownerId);
         ownerSecurityService.checkIfValidToken(owner, token);
 
-        owner.setUsername(ownerInput.getUsername());
-        owner.setPassword(ownerInput.getPassword());
-        owner.setEmail(ownerInput.getEmail());
+        ownerMapper.modifyOwnerFromOwnerDto(owner, ownerInput);
 
         Owner savedOwner = ownerService.saveOwner(owner);
-        return ResponseEntity.ok(CreateOwnerMapper.ownerModelToCreatedOwnerDto(savedOwner));
+        return ownerMapper.ownerModelToCreatedOwnerDto(savedOwner);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/owners/{id}")
-    public Map<String, Boolean> deleteOwner(@RequestParam String token,
-                                            @PathVariable(value="id") Long ownerId,
-                                            @Valid @RequestBody OwnerDto ownerInput)
+    public CreatedOwnerDto deleteOwner(@RequestHeader(value = "Authorization") String token,
+                                       @PathVariable(value="id") Long ownerId,
+                                       @Valid @RequestBody OwnerDto ownerInput)
             throws ResourceNotFoundException, Exception {
         Owner owner = ownerService.getOwnerById(ownerId);
         ownerSecurityService.checkIfValidToken(owner, token);
         ownerService.deleteOwner(owner);
-
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("deleted", Boolean.TRUE);
-        return response;
+        return ownerMapper.ownerModelToCreatedOwnerDto(owner);
     }
 }

@@ -12,6 +12,6 @@ public interface IBookService {
     List<Book> getBooksByAuthor(Author author);
     Book getBookByIsbn13(String isbn13) throws ResourceNotFoundException;
     Book getBookById(Long bookId) throws ResourceNotFoundException;
-    Book saveBook(BookFromLibrary bookFromLibrary);
+    Book saveBookFromLibrary(BookFromLibrary bookFromLibrary);
     void deleteBook(Book book);
 }

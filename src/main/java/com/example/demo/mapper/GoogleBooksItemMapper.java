@@ -4,11 +4,15 @@ import com.example.demo.service.book.externallibrary.googlebook.models.IndustryI
 import com.example.demo.service.book.externallibrary.googlebook.models.Item;
 import com.example.demo.service.book.externallibrary.googlebook.models.VolumeInfo;
 import com.example.demo.service.book.model.BookFromLibrary;
+import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
-public class GoogleBooksItemMapper {
-    public static BookFromLibrary GoogleBooksItemToBookFromLibraryMapper(Item item) {
+@Service
+public class GoogleBooksItemMapper implements ILibraryMapper{
+    @Override
+    public BookFromLibrary GoogleBooksItemToBookFromLibraryMapper(@NotNull Item item) {
 
         VolumeInfo info = item.getVolumeInfo();
         BookFromLibrary book = new BookFromLibrary();
@@ -19,7 +23,8 @@ public class GoogleBooksItemMapper {
         return book;
     }
 
-    private static String getIsbn13FromLibrary(List<IndustryIdentifier> identifiers) {
+    @Override
+    public String getIsbn13FromLibrary(@NotNull List<IndustryIdentifier> identifiers) {
         String isbn_13 = null;
         for(int i = 0; i < identifiers.size(); i++) {
             if(identifiers.get(i).getType().equals("ISBN_13")) {
@@ -28,5 +33,4 @@ public class GoogleBooksItemMapper {
         }
         return isbn_13;
     }
-
 }

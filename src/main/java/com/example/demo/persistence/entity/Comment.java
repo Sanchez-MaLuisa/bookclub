@@ -22,7 +22,7 @@ public class Comment {
     private Review review;
 
     @ManyToOne
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private Owner owner;
 
     public Comment() {}

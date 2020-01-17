@@ -11,8 +11,4 @@ import java.util.Optional;
 
 @Repository
 public interface ICommentRepository extends JpaRepository<Comment, Long> {
-    //@Query("SELECT b FROM Book b WHERE b.isbn13 = :isbn13")
-    //Optional<Book> findByIsbn13(@Param("isbn13") String isbn13);
-    //findByOwner
-    //findByReview
 }

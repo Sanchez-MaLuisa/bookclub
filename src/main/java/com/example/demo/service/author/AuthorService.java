@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.author;
 
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.persistence.entity.Author;
@@ -39,8 +39,7 @@ public class AuthorService implements IAuthorService {
 
     @Override
     public Author saveAuthor(Author author) {
-        Author aux = authorRepository.save(author);
-        return aux;
+        return authorRepository.save(author);
     }
 
     @Override

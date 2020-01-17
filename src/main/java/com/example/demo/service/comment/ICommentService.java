@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.comment;
 
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.persistence.entity.Book;

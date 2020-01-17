@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.service.author;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.persistence.entity.Author;
 import java.util.List;
